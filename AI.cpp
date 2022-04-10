@@ -18,12 +18,7 @@ int AI::MinMaxSearch(bool player,int depth, int alpha, int beta)
 {
 	if (gameOver(player)||gameOver(!player)||depth==0)
 		return evaluate(player);
-	//if (depth == 0) {
-	//	//if (this->SearchDepth == 4)
-	//		//return killSearch(player, 4, alpha, beta);
-	//	//else
-	//		return evaluate(player); 
-	//}
+
 	/*   
 	  加入启发式搜索
 	  对当前的所有的空点进行打分，排序
@@ -79,9 +74,12 @@ int AI::MinMaxSearch(bool player,int depth, int alpha, int beta)
 			alpha = scoreList;
 			if (depth == this->SearchDepth)
 				nextPos = { tmp.rowIndex,tmp.colIndex };
+			validNodes++;
 		}
-		if (scoreList >= beta)
+		if (scoreList >= beta) {
+			cutNodes++;
 			return beta;
+		}
 	}
 	ZobristCache(depth, alpha);
 	return alpha;
@@ -249,8 +247,8 @@ bool AI::isInBoard(int rowIndex, int colIndex)
 
 bool AI::hasNeighbor(int rowIndex, int colIndex)
 {
-	for(int i=-2;i<=2;i++)
-		for (int j = -2; j <=2; j++){
+	for(int i=-1;i<=1;i++)
+		for (int j = -1; j <=1; j++){
 			if (i == 0 && j == 0)
 				continue;
 			if (isInBoard(rowIndex + i, colIndex + j) && (aiChess[rowIndex + i][colIndex + j] || manChess[rowIndex + i][colIndex + j]))
@@ -289,6 +287,9 @@ AI::AI(int depth)
 {
 	this->SearchDepth =depth;
 
+	cutNodes = 0;
+	validNodes = 0;
+
 	chessStr.push_back("11111");	scoreList.push_back(100000);//连五
 
 	chessStr.push_back("011110");	scoreList.push_back(10000);//活四
@@ -313,31 +314,19 @@ AI::AI(int depth)
 	chessStr.push_back("00011");	scoreList.push_back(10);
 
 	chessStr.push_back("011010");	scoreList.push_back(10);//活一
-	
-	//10 100 1000 10000 100000
-	
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 1,1,1,1,1 }, 100000));	//连五
-
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,1,1,1,1,0 }, 10000));  //活四
-
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,1,1,1,1 }, 1000));		//眠四
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 1,0,1,1,1 }, 1000));
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 1,1,0,1,1 }, 1000));
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 1,1,1,0,1 }, 1000));
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 1,1,1,1,0 }, 1000));
-
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,1,1,1,0 }, 1000));		//活三
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,1,0,1,1,0 }, 1000));
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,1,1,0,1,0 }, 1000));
-
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 1,1,1,0,0 }, 100));		//眠三
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,0,1,1,1 }, 100));
-
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,0,1,1,0,0 }, 100));	//活二
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,1,0,1,0 }, 100));
-
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 1,1,0,0,0 }, 10));		//眠二
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,0,0,1,1 }, 10));
-
-	//this->ScoreTab.insert(pair<vector<string>, int>({ 0,1,1,0,1,0 }, 10));		//活一
 }
+
+SEARCH_INFO AI::search(bool player)
+{
+	clock_t start, end;
+	start = clock();
+	cout << "search start" << endl;
+	MinMaxSearch(player, SearchDepth, -0x3fffffff,0x3fffffff);
+	cout << "search end" << endl;
+	end = clock();
+	SEARCH_INFO res{ this->nextPos.row,this->nextPos.col,end - start,cutNodes,validNodes };
+	cutNodes = validNodes = 0;
+	return res;
+}
+
+

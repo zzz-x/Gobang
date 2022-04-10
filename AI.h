@@ -3,6 +3,7 @@
 #include<vector>
 #include<map>
 #include<string>
+#include<time.h>
 
 using namespace std;
 
@@ -10,6 +11,16 @@ using namespace std;
 #define ROW_RANGE 15
 #define COMPUTER 1
 #define HUMAN 0
+
+
+
+struct SEARCH_INFO {
+	int nextPosRow;
+	int nextPosCol;
+	int time;
+	int cutNodes;
+	int validNodes;
+};
 
 
 /* row col */
@@ -40,7 +51,7 @@ struct ZobristInfo {
 };
 
 class AI {
-private:
+protected:
 	int SearchDepth;
 	Point nextPos;
 	bool manChess[15][15] = {0};	//记录人
@@ -53,28 +64,31 @@ private:
 
 	vector<string>chessStr;
 	vector<int> scoreList;
-public:
+
+	int cutNodes;
+	int validNodes;
+
 	//Zobrist部分
 	void ZobristMove(bool player, int rowIndex, int colIndex);
-	void ZobristInit();
-	void ZobristCache(int depth,int score);
+	void ZobristCache(int depth, int score);
 	const ZobristInfo ZobristFind(long long code);
-
-
-
-
-	void setDepth(int n) { SearchDepth = n; }
-	int MinMaxSearch(bool player,int depth, int alpha, int beta);
+	int MinMaxSearch(bool player, int depth, int alpha, int beta);
 	int killSearch(bool player, int depth, int alpha, int beta);
 	bool isKillChess(bool player, int rowIndex, int colIndex);
 	bool gameOver(bool player);
 	int evaluate(bool isAI);
 	int SingleScore(int rowIndex, int colIndex, bool player);
-	bool isInBoard(int rowIndex, int colIndex);
 	bool hasNeighbor(int rowIndex, int colIndex);
-	string getPointLink(int rowIndex, int colIndex, bool player,const Direction& direct);
-	AI(int depth=2);
+	string getPointLink(int rowIndex, int colIndex, bool player, const Direction& direct);
+	
+public:
+	AI(int depth = 2);
+	SEARCH_INFO search(bool player);
+	void ZobristInit();
 
-	friend class QtWidgetsApplication2;
+	void setDepth(int n) { SearchDepth = n; }
+	bool isInBoard(int rowIndex, int colIndex);
+
+	friend class chessThread;
 
 };
