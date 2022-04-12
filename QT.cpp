@@ -83,10 +83,6 @@ QT::QT(QWidget* parent)
         }
         });
 
-
-
-
-
     ui.centralWidget->setMouseTracking(true);
 
     allowMouse = 0;
@@ -171,12 +167,13 @@ void QT::mousePressEvent(QMouseEvent* event)
         lab->setPixmap(pix);
         lab->show();
 
-        if (subthread->gameOver(HUMAN)) {
-            int ret = QMessageBox::question(this,
+        if (subthread->gameOver(HUMAN)&&isbegin) {
+            int ret = QMessageBox::information(this,
                 tr("游戏结果"),
                 tr("你赢了"),
-                QMessageBox::Ok | QMessageBox::Cancel,
+                QMessageBox::Ok,
                 QMessageBox::Ok);
+            isbegin = 0;
             return;
         }
         else {
@@ -208,13 +205,14 @@ void QT::paintComputer() {
     lab->setGeometry(QRect(pixelX, pixelY, pix.width(), pix.height()));
     lab->show();
     allowMouse = 1;
-    if (subthread->gameOver(COMPUTER)) {
+    if (subthread->gameOver(COMPUTER)&&isbegin) {
         allowMouse = 0;
-        int ret = QMessageBox::question(this,
+        int ret=QMessageBox::information(this,
             tr("游戏结果"),
             tr("你输了"),
             QMessageBox::Ok,
             QMessageBox::Ok);
+        isbegin = 0;
         return;
     }
 }

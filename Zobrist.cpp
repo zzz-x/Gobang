@@ -1,3 +1,4 @@
+#pragma once
 #include"AI.h"
 using namespace std;
 

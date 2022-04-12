@@ -3,6 +3,7 @@
 #include<vector>
 #include<map>
 #include<string>
+#include"Automaton.h"
 #include<time.h>
 
 using namespace std;
@@ -54,6 +55,7 @@ class AI {
 protected:
 	int SearchDepth;
 	Point nextPos;
+	Automaton AC;
 	bool manChess[15][15] = {0};	//¼ÇÂ¼ÈË
 	bool aiChess[15][15] = { 0 };	//¼ÇÂ¼AI
 

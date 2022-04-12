@@ -1,12 +1,9 @@
+#pragma once
 #include "AI.h"
 #include<iostream>
 #include<map>
 #include<queue>
 using namespace std;
-
-
-
-
 
 /*
 全部以MAX层的角度来考虑
@@ -41,7 +38,7 @@ int AI::MinMaxSearch(bool player,int depth, int alpha, int beta)
 			else
 				manChess[i][j] = 1;
 
-			int val = this->SingleScore(i, j, player);
+			int val = this->SingleScore(i, j, player)-this->SingleScore(i,j,!player);
 			q.push({ i,j,val });
 			if (player == COMPUTER)
 				aiChess[i][j] = 0;
@@ -230,10 +227,17 @@ int AI::SingleScore(int rowIndex, int colIndex, bool player)
 	int dirScore = 0;
 	for (int i = 0; i < 4; i++)
 		pointList.push_back(getPointLink(rowIndex, colIndex, player, direct[i]));
-	for (int k= 0; k < 4; k++) {
+	
+	
+	int ac_score = 0;
+	for (int k = 0; k < 4; k++) {
+		int res = AC.search(pointList[k]);
+					
+		ac_score += res;
+		
 		for (int i = 0; i < chessStr.size(); i++) {
-			if (pointList[k].find(chessStr[i]) != pointList[k].npos) 
-				dirScore = max(dirScore, scoreList[i]);
+			if (pointList[k].find(chessStr[i]) != pointList[k].npos)
+				dirScore += scoreList[i];
 		}
 		score += dirScore;
 	}
@@ -261,7 +265,7 @@ string  AI::getPointLink(int rowIndex, int colIndex, bool player,const Direction
 {
 	string pointLink;
 
-	for (int i =-4; i <=4; i++) {
+	for (int i =-3; i <=3; i++) {
 		int tmp_rol = rowIndex + i * direct.dy;
 		int tmp_col = colIndex + i * direct.dx;
 		if (isInBoard(tmp_rol, tmp_col)) {
@@ -290,9 +294,10 @@ AI::AI(int depth)
 	cutNodes = 0;
 	validNodes = 0;
 
-	chessStr.push_back("11111");	scoreList.push_back(100000);//连五
-
+	chessStr.push_back("11111");	scoreList.push_back(1000000);//连五
+	
 	chessStr.push_back("011110");	scoreList.push_back(10000);//活四
+	
 
 	chessStr.push_back("01111");	scoreList.push_back(1000);//眠四
 	chessStr.push_back("10111");	scoreList.push_back(1000);
@@ -313,7 +318,11 @@ AI::AI(int depth)
 	chessStr.push_back("11000");	scoreList.push_back(10);//眠二
 	chessStr.push_back("00011");	scoreList.push_back(10);
 
-	chessStr.push_back("011010");	scoreList.push_back(10);//活一
+	chessStr.push_back("00100");	scoreList.push_back(10);//活一
+
+	for (int i=0;i<chessStr.size();i++)
+		AC.insert(chessStr[i],scoreList[i]);
+	AC.build();
 }
 
 SEARCH_INFO AI::search(bool player)

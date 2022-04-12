@@ -1,10 +1,10 @@
-#include "QtWidgetsApplication2.h"
+#include "QT.h"
 #include <QtWidgets/QApplication>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    QtWidgetsApplication2 w;
+    QT w;
     w.show();
-    return a.exec(); 
+    return a.exec();
 }
