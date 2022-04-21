@@ -24,6 +24,18 @@ void AI::ZobristInit() {
 	ZobristCode = rand64();
 }
 
+void AI::setChess(int row, int col, int player)
+{
+	makeMove(row, col, player);
+}
+
+bool AI::checkChess(int row, int col, int player)
+{
+	char target_ch = (player == COMPUTER ? '1' : '0');
+	return chessBoard[row][col] == target_ch;
+	
+}
+
 void AI::ZobristCache(int depth,int score)
 {
 	if (ZobristMap.find(this->ZobristCode) != ZobristMap.end())

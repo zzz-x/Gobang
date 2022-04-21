@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>926</width>
-    <height>672</height>
+    <width>836</width>
+    <height>705</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,11 +17,17 @@
    <widget class="QFrame" name="verticalFrame">
     <property name="geometry">
      <rect>
-      <x>700</x>
+      <x>630</x>
       <y>390</y>
-      <width>161</width>
+      <width>191</width>
       <height>191</height>
      </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QFrame{
+border-radius:10px;
+border:2px solid;
+}</string>
     </property>
     <property name="frameShape">
      <enum>QFrame::Box</enum>
@@ -33,6 +39,9 @@
         <font>
          <family>微软雅黑</family>
         </font>
+       </property>
+       <property name="styleSheet">
+        <string notr="true">border:;</string>
        </property>
        <property name="text">
         <string>思考时间:</string>
@@ -77,33 +86,11 @@
      </item>
     </layout>
    </widget>
-   <widget class="QPushButton" name="pushButton_5">
-    <property name="geometry">
-     <rect>
-      <x>660</x>
-      <y>180</y>
-      <width>101</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Agency FB</family>
-      <pointsize>13</pointsize>
-     </font>
-    </property>
-    <property name="contextMenuPolicy">
-     <enum>Qt::NoContextMenu</enum>
-    </property>
-    <property name="text">
-     <string>电脑先下</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="pushButton">
     <property name="geometry">
      <rect>
-      <x>780</x>
-      <y>100</y>
+      <x>670</x>
+      <y>80</y>
       <width>111</width>
       <height>51</height>
      </rect>
@@ -111,7 +98,33 @@
     <property name="font">
      <font>
       <pointsize>12</pointsize>
+      <weight>50</weight>
+      <bold>false</bold>
      </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+	border-width:1px;
+    padding: 10px;
+	border-style:outset;
+    border-radius: 10px;
+}
+QPushButton:hover{
+   	background-color: #ecf5ff;
+    color: #409eff;
+    border: 1px solid #dcdfe6;
+    padding: 10px;
+    border-radius: 10px;
+}
+QPushButton:checked{
+   	background-color: #66CCFF;
+    color: #66CCFF;
+    border: 1px solid #dcdfe6;
+    padding: 10px;
+    border-radius: 10px;
+}</string>
     </property>
     <property name="text">
      <string>简单</string>
@@ -120,7 +133,7 @@
    <widget class="QPushButton" name="pushButton_2">
     <property name="geometry">
      <rect>
-      <x>780</x>
+      <x>670</x>
       <y>180</y>
       <width>111</width>
       <height>51</height>
@@ -131,6 +144,21 @@
       <pointsize>12</pointsize>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    padding: 10px;
+    border-radius: 10px;
+}
+QPushButton:hover{
+   	background-color: #ecf5ff;
+    color: #409eff;
+    border: 1px solid #dcdfe6;
+    padding: 10px;
+    border-radius: 10px;
+}</string>
+    </property>
     <property name="text">
      <string>普通</string>
     </property>
@@ -138,8 +166,8 @@
    <widget class="QPushButton" name="pushButton_3">
     <property name="geometry">
      <rect>
-      <x>780</x>
-      <y>270</y>
+      <x>670</x>
+      <y>280</y>
       <width>111</width>
       <height>51</height>
      </rect>
@@ -149,15 +177,30 @@
       <pointsize>12</pointsize>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+    background-color: #ffffff;
+    border: 1px solid #dcdfe6;
+    padding: 10px;
+    border-radius: 10px;
+}
+QPushButton:hover{
+   	background-color: #ecf5ff;
+    color: #409eff;
+    border: 1px solid #dcdfe6;
+    padding: 10px;
+    border-radius: 10px;
+}</string>
+    </property>
     <property name="text">
      <string>困难</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_6">
+   <widget class="QPushButton" name="pushButton_4">
     <property name="geometry">
      <rect>
-      <x>660</x>
-      <y>270</y>
+      <x>310</x>
+      <y>640</y>
       <width>101</width>
       <height>51</height>
      </rect>
@@ -171,34 +214,30 @@
     <property name="contextMenuPolicy">
      <enum>Qt::NoContextMenu</enum>
     </property>
+    <property name="styleSheet">
+     <string notr="true">QPushButton {
+    background-color: #F19373;
+    border: 1px solid #dcdfe6;
+    padding: 10px;
+    border-radius: 10px;
+}
+QPushButton:hover{
+   	background-color: #FCD9C4;
+    color: #000000;
+    border: 1px solid #dcdfe6;
+    padding: 10px;
+    border-radius: 10px;
+}</string>
+    </property>
     <property name="text">
      <string>悔棋</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_4">
+   <widget class="QPushButton" name="pushButton_5">
     <property name="geometry">
      <rect>
-      <x>660</x>
-      <y>100</y>
-      <width>101</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>Agency FB</family>
-      <pointsize>13</pointsize>
-     </font>
-    </property>
-    <property name="text">
-     <string>我先下</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="pushButton_7">
-    <property name="geometry">
-     <rect>
-      <x>660</x>
-      <y>270</y>
+      <x>110</x>
+      <y>640</y>
       <width>101</width>
       <height>51</height>
      </rect>
@@ -216,26 +255,48 @@
      <string>开始</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="pushButton_6">
+    <property name="geometry">
+     <rect>
+      <x>110</x>
+      <y>640</y>
+      <width>101</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Agency FB</family>
+      <pointsize>13</pointsize>
+     </font>
+    </property>
+    <property name="contextMenuPolicy">
+     <enum>Qt::NoContextMenu</enum>
+    </property>
+    <property name="text">
+     <string>重新开始</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>630</x>
+      <y>650</y>
+      <width>171</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>华文楷体</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Designed by 张勋</string>
+    </property>
+   </widget>
   </widget>
-  <widget class="QMenuBar" name="menuBar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>926</width>
-     <height>26</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QToolBar" name="mainToolBar">
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-  </widget>
-  <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <resources>

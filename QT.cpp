@@ -1,20 +1,32 @@
 #include "QT.h"
 
+const QString selectStyle = QString("background-color: #87CEFF;border: 1px solid #dcdfe6;border-radius: 10px; ");
 
 
 QT::QT(QWidget* parent)
     : QMainWindow(parent)
-{
+{    
+    //CAE5E8;
+    QPalette palette(this->palette());
+
+    palette.setColor(QPalette::Background, QColor(0xECECEC));
+
+    this->setPalette(palette);
+
     chessX = chessY = -1;
     ui.setupUi(this);
-
-    firstPlay = -1;
-    isbegin = 0;
-    depth = -1;
-
-    subthread = new chessThread;
-    subthread->init(4);
+    /********初始化元素*********/
+    firstPlay = -1, depth = -1;
+    isbegin = false, receiveAns = true;
     
+
+    mythread = new QThread;
+    ai.moveToThread(mythread); 
+    connect(this, SIGNAL(beginSearch()), &ai, SLOT(search()));
+    connect(&ai, SIGNAL(isDone()), this, SLOT(paintComputer()));
+    mythread->start();
+
+    ui.pushButton_6->setVisible(0);
     group_button.push_back(ui.pushButton);
     group_button.push_back(ui.pushButton_2);
     group_button.push_back(ui.pushButton_3);
@@ -22,85 +34,119 @@ QT::QT(QWidget* parent)
     group_button.push_back(ui.pushButton_5);
     group_button.push_back(ui.pushButton_6);
 
-    ui.pushButton_6->setVisible(0);
+    QFile qss("QPushButton_Mode.qss");
+    qss.open(QFile::ReadOnly);
+    QString style = QLatin1String(qss.readAll());
+    for (int i = 0; i < 3; i++)
+        group_button[i]->setStyleSheet(style);
+    qss.close();
 
+    qss.setFileName("QPushButton_Start.qss");
+    qss.open(QFile::ReadOnly);
+    style = QLatin1String(qss.readAll());
+    for (int i = 4; i < 6; i++)
+        group_button[i]->setStyleSheet(style);
+    qss.close();
 
-    connect(ui.pushButton, &QPushButton::clicked, [=] {
-        for (int i = 0; i < 3; i++) {
-            if ((i + 1) * 2 == depth)
-                group_button[i]->setStyleSheet(QString("background-color:;"));
-        }
-        subthread->setDepth(depth=2);
-        group_button[0]->setStyleSheet(QString("background-color:rgb(204,236,255);"));
-        });
-    connect(ui.pushButton_2, &QPushButton::clicked, [=] {
-        for (int i = 0; i < 3; i++) {
-            if ((i + 1) * 2 == depth)
-                group_button[i]->setStyleSheet(QString("background-color:;"));
-        }
-        group_button[1]->setStyleSheet(QString("background-color:rgb(204,236,255);"));
-        subthread->setDepth(depth=4);
-        });
-    connect(ui.pushButton_3, &QPushButton::clicked, [=] {
-        for (int i = 0; i < 3; i++) {
-            if ((i + 1) * 2 == depth)
-                group_button[i]->setStyleSheet(QString("background-color:;"));
-        }
-        group_button[2]->setStyleSheet(QString("background-color:rgb(204,236,255);"));
-        subthread->setDepth(depth=6);
-        });
-
-    connect(ui.pushButton_4, &QPushButton::clicked, [=] {
-        firstPlay = HUMAN;
-        ui.pushButton_4->setStyleSheet(QString("background-color:rgb(204,236,255);"));
-        ui.pushButton_5->setEnabled(0);
-        allowMouse = 1;
-        });
-
-    connect(ui.pushButton_5, &QPushButton::clicked, [=] {
-        firstPlay = COMPUTER;
-        ui.pushButton_5->setStyleSheet(QString("background-color:rgb(204,236,255);"));
-        ui.pushButton_4->setEnabled(0);
-        allowMouse = 1;
-        });
-
-    connect(ui.pushButton_6, &QPushButton::clicked, [=] {
-        ;
-        });
-    connect(ui.pushButton_7, &QPushButton::clicked, [=] {
-        if (firstPlay == -1 || depth == -1) {
-            int ret = QMessageBox::warning(this,
-                tr(""),
-                tr("请选择好难度和模式"),
-                QMessageBox::Ok ,
-                QMessageBox::Ok);
-            return;
-        }
-        else {
-            ui.pushButton_7->setVisible(0);
-            ui.pushButton_6->setVisible(1);
-            isbegin = 1;
-        }
-        });
+    connectButton();
 
     ui.centralWidget->setMouseTracking(true);
 
     allowMouse = 0;
+
+    recentPos.row = recentPos.col = -1;
 }
 
 
 
+void QT::undo()
+{
+    if(!history.isEmpty()) {
+        auto point = history.top();
+        qDebug()<<"undo "<< point.row << ' ' << point.col << endl;
+        history.pop();
+        delete label[point.row][point.col];
+
+        mythread->terminate();
+        mythread->wait();
+        delete mythread;
+        mythread = new QThread;
+        ai.moveToThread(mythread);
+        mythread->start();
+        allowMouse = true;
+        qDebug() << "allow mouse" << endl;
+    }
+}
+
+void QT::replay()
+{
+    //取消重新开始，启用开始
+    ui.pushButton->setChecked(false);
+    ui.pushButton_2->setChecked(false);
+    ui.pushButton_3->setChecked(false);
+
+    clearSelectStyle(group_button, depth);
+
+    ui.pushButton_5->setVisible(true);
+    ui.pushButton_6->setVisible(false);
+    allowMouse = false;
+    isbegin = false;
+    firstPlay = -1;
+    depth = -1;
+    while (!history.empty()) {
+        auto point = history.top();
+        delete label[point.row][point.col];
+        history.pop();
+    }
+    ai.clear();
+}
+
+void QT::start()
+{
+    if (depth == -1) {
+        QMessageBox::warning(this,
+            tr("注意事项"),
+            tr("请先选择难度"),
+            tr("确定"));
+    }
+    else {
+        int ret = QMessageBox::information(this,
+            tr("选择先手"),
+            tr("请选择谁是先手"),
+            tr("我先下"),
+            tr("电脑先下")
+        );
+        firstPlay = ret;
+        isbegin = true;
+        allowMouse = true;
+        ui.pushButton_5->setVisible(0);
+        ui.pushButton_6->setVisible(1);
+        if (firstPlay == COMPUTER) {
+            ai.setChess(7, 7, COMPUTER);
+            history.push_back({ 7,7,COMPUTER });
+            recentPos = { 7,7,COMPUTER };//记录
+            drawChess(7, 7, COMPUTER);
+        }
+    }
+}
+
 void QT::paintEvent(QPaintEvent* event)
 {
     int val = (height() > width()) ? width() : height();
-    gridH = val / 17;
-    gridW = val / 17;
+    gridH = val / 18;
+    gridW = val / 18;
 
-    startX = gridW;
-    startY = 2 * gridH;
+
+    startX = gridW+10;
+    startY = gridH+10;
+    QPainter painter(this);
+    painter.setBrush(QBrush(qRgb(0xd2, 0xaf, 0x8f)));
+    painter.drawRect(startX/2+5, startY/2+5, gridH * 15, gridW * 15);
+
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing, true); // 抗锯齿
 
+    //背景色
     QPen pen;
     pen.setWidth(2);
     p.setPen(pen);
@@ -111,18 +157,13 @@ void QT::paintEvent(QPaintEvent* event)
         //竖线
         p.drawLine(startX + i * gridW, startY, startX + i * gridW, startY + 14 * gridH);
     }
-    if (firstPlay == COMPUTER&&isbegin) {
-        QPixmap pix;
-        pix = QPixmap("black.png");
-        QLabel* lab = new QLabel(this);
-        int pixelX = startX - gridW / 2 + 7 * gridW;
-        int pixelY = startY - gridH / 2 + 7 * gridH;
-        pix = pix.scaled(gridH, gridW);
-        lab->setGeometry(QRect(pixelX, pixelY, pix.width(), pix.height()));
-        lab->setPixmap(pix);
-        lab->show();
-        subthread->setChess(7, 7, COMPUTER);
-    }
+   
+    p.setBrush(Qt::black);
+    p.drawRect(startX + 3 * gridW - 3, startY + 3 * gridH - 3, 6, 6);
+    p.drawRect(startX + 11 * gridW - 3, startY +3 * gridH - 3, 6, 6);
+    p.drawRect(startX + 3 * gridW - 3, startY + 11 * gridH - 3, 6, 6);
+    p.drawRect(startX + 11 * gridW - 3, startY + 11 * gridH - 3, 6, 6);
+    p.drawRect(startX + 7 * gridW - 3, startY + 7 * gridH - 3, 6, 6);
 }
 
 void QT::showSearchInfo(const SEARCH_INFO info)
@@ -140,79 +181,132 @@ void QT::mousePressEvent(QMouseEvent* event)
         if (!(clickXpos >= startX - gridW / 2 && clickXpos <= startX - gridW / 2 + 15 * gridW
             && clickYpos >= startY - gridH / 2 && clickYpos <= startY - gridH / 2 + 15 * gridH))
             return;
-        //禁用鼠标
-        qDebug() << "mouse" << allowMouse << endl;
-
+        //防止重复点击
         allowMouse = 0;
-
         //棋盘位置转化为数组坐标值
         chessX = (clickXpos - startX + gridW / 2) / gridW;
         chessY = (clickYpos - startY + gridH / 2) / gridH;
-        if (subthread->check(chessY, chessX, COMPUTER) || subthread->check(chessY, chessX, HUMAN))
+        if (ai.checkChess(chessY, chessX, HUMAN) || ai.checkChess(chessY, chessX, COMPUTER)) {  //判断该位置是否有棋子
+            allowMouse = true;
+            qDebug() << "already have chess" << endl;
             return;
-        subthread->setChess(chessY, chessX, HUMAN);
+        }
+        ai.setChess(chessY, chessX, HUMAN);
+        history.push({ chessY,chessX,HUMAN });  //压入栈
+        drawChess(chessY, chessX, HUMAN);
+        recentPos = { chessY,chessX,HUMAN };//记录位置
 
-        QPixmap pix;
-
-        if (firstPlay == HUMAN)
-            pix = QPixmap("black.png");
-        else
-            pix = QPixmap("white.png");
-
-        pix = pix.scaled(gridH, gridW);
-        QLabel* lab = new QLabel(this);
-        int pixelX = startX - gridW / 2 + chessX * gridW;
-        int pixelY = startY - gridH / 2 + chessY * gridH;
-        lab->setGeometry(QRect(pixelX, pixelY, pix.width(), pix.height()));
-        lab->setPixmap(pix);
-        lab->show();
-
-        if (subthread->gameOver(HUMAN)&&isbegin) {
+        if (ai.gameOver(HUMAN)&&isbegin) {
             int ret = QMessageBox::information(this,
                 tr("游戏结果"),
                 tr("你赢了"),
                 QMessageBox::Ok,
                 QMessageBox::Ok);
             isbegin = 0;
+            allowMouse = false;
             return;
         }
         else {
-            subthread->start();
-            connect(subthread, SIGNAL(isDone()), this, SLOT(paintComputer()));
+            ui.pushButton_4->setEnabled(1);
+            emit beginSearch();
         }
     }
 }
 
+void QT::drawChess(int row, int col, int player)
+{
+    QPixmap pix;
+    if (player == firstPlay)
+        pix = QPixmap("black_select.png");
+    else
+        pix = QPixmap("white_select.png");
+    label[row][col] = new QLabel(this);
+    int pixelX = startX - gridW / 2 + col * gridW;
+    int pixelY = startY - gridH / 2 + row * gridH;
+    pix = pix.scaled(gridH, gridW);
+    label[row][col]->setGeometry(QRect(pixelX, pixelY, pix.width(), pix.height()));
+    label[row][col]->setPixmap(pix);
+    label[row][col]->show();
 
+    if (recentPos.row != -1) {
+        if (recentPos.player == firstPlay)
+            pix = QPixmap("black.png");
+        else
+            pix = QPixmap("white.png");
+        delete label[recentPos.row][recentPos.col];
+        label[recentPos.row][recentPos.col] = new QLabel(this);
+        int pixelX = startX - gridW / 2 + recentPos.col * gridW;
+        int pixelY = startY - gridH / 2 + recentPos.row * gridH;
+        pix = pix.scaled(gridH, gridW);
+        label[recentPos.row][recentPos.col]->setGeometry(QRect(pixelX, pixelY, pix.width(), pix.height()));
+        label[recentPos.row][recentPos.col]->setPixmap(pix);
+        label[recentPos.row][recentPos.col]->show();
+    }
+}
+
+void QT::connectButton()
+{
+    connect(ui.pushButton, &QPushButton::clicked, [=] {
+        clearSelectStyle(group_button, depth);
+        ai.setDepth(depth = 2);
+        group_button[0]->setStyleSheet(selectStyle);
+        });
+    connect(ui.pushButton_2, &QPushButton::clicked, [=] {
+        clearSelectStyle(group_button, depth);
+        group_button[1]->setStyleSheet(selectStyle);
+        ai.setDepth(depth = 4);
+        });
+    connect(ui.pushButton_3, &QPushButton::clicked, [=] {
+        clearSelectStyle(group_button, depth);
+        group_button[2]->setStyleSheet(selectStyle);
+        ai.setDepth(depth = 6);
+        });
+
+    connect(ui.pushButton_4, SIGNAL(clicked()), this, SLOT(undo()));
+
+    connect(ui.pushButton_5, SIGNAL(clicked()),this,SLOT(start()));
+
+    connect(ui.pushButton_6, SIGNAL(clicked()), this, SLOT(replay()));
+}
+
+void QT::clearSelectStyle(QVector<QPushButton*>& group, int depth)
+{
+    QFile qss("QPushButton_Mode.qss");
+    qss.open(QFile::ReadOnly);
+    QString style = QLatin1String(qss.readAll());
+    for (int i = 0; i < 3; i++)
+        if ((i + 1) * 2 == depth)
+            group[i]->setStyleSheet(style);
+    qss.close();
+    
+}
 
 void QT::paintComputer() {
-    SEARCH_INFO res = subthread->getResult();
-    showSearchInfo(res);
+    ui.pushButton_4->setEnabled(0);
+    if (!receiveAns) {
+        receiveAns = true;
+        return;
+    }
+    SEARCH_INFO res = ai.searchRes;   //获取search结果
+    showSearchInfo(res);        //QT界面显示信息
     chessX = res.nextPosCol;
     chessY = res.nextPosRow;
-    QPixmap pix;
+    ai.setChess(chessY, chessX, COMPUTER);
+    history.push({ chessY,chessX,COMPUTER});
+    drawChess(chessY, chessX, COMPUTER);
+    recentPos = { chessY,chessX,COMPUTER };
 
-    if (firstPlay == HUMAN)
-        pix = QPixmap("white.png");
-    else
-        pix = QPixmap("black.png");
-
-    pix = pix.scaled(gridH, gridW);
-    QLabel* lab = new QLabel(this);
-    lab->setPixmap(pix);
-    int pixelX = startX - gridW / 2 + chessX * gridW;
-    int pixelY = startY - gridH / 2 + chessY * gridH;
-    lab->setGeometry(QRect(pixelX, pixelY, pix.width(), pix.height()));
-    lab->show();
-    allowMouse = 1;
-    if (subthread->gameOver(COMPUTER)&&isbegin) {
-        allowMouse = 0;
-        int ret=QMessageBox::information(this,
-            tr("游戏结果"),
-            tr("你输了"),
-            QMessageBox::Ok,
-            QMessageBox::Ok);
-        isbegin = 0;
-        return;
+    if (isbegin) {
+        if (ai.gameOver(COMPUTER)) {
+            allowMouse =isbegin = 0;
+            int ret = QMessageBox::information(this,
+                tr("游戏结果"),
+                tr("你输了"),
+                QMessageBox::Ok,
+                QMessageBox::Ok);
+            return;
+        }
+        else
+            allowMouse = 1;
     }
 }
