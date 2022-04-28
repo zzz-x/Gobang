@@ -23,9 +23,8 @@ struct Point
 struct PointVal {
 	int rowIndex;
 	int colIndex;
-	int value;
+	long long value;
 	friend bool operator <(const PointVal& p1, const PointVal& p2) { return p1.value < p2.value; }
-
 };
 
 /* dx dy */
@@ -39,5 +38,5 @@ struct Direction
 struct ZobristInfo
 {
 	int depth;
-	int val;
+	long long val;
 };

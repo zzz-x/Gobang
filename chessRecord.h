@@ -3,6 +3,7 @@
 #include"Automaton.h"
 #include<string>
 #include<vector>
+#include<stack>
 using namespace std;
 
 const enum RECORD_DIR{herizon,vertical, leftBt_rightTop,leftTop_rightBt};
@@ -15,17 +16,18 @@ private:
 	vector<vector<string>> herizon{ 2,vector<string>(15) };
 	vector<vector<string>> vertical{2,vector<string>(15)};
 
-	vector<int>scoreList;
+	vector<long long>scoreList;
 
 
-	int herizon_score[2][15][2];
-	int vertical_score[2][15][2]; 
-	int leftBt_rightTop_score[2][29][2];
-	int leftTop_rightBt_score[2][29][2];
+	stack<long long,vector<long long>> herizon_score[2][15];
+
+	stack<long long,vector<long long>> vertical_score[2][15];
+	stack<long long,vector<long long>> leftBt_rightTop_score[2][29];
+	stack<long long, vector<long long>> leftTop_rightBt_score[2][29];
 public:
-	int countVal(const vector<int>& res);
-	void init(vector<int>s);
-	int getScore(bool player);
+	long long countVal(const vector<int>& res);
+	void init(vector<long long>s);
+	long long getScore(bool player);
 	void makeChange(int row, int col, bool player,Automaton& AC);
 	void clear();
 	void unmakeChange(int row, int col, bool player);

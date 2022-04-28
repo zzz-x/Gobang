@@ -1,13 +1,16 @@
 #include "QT.h"
 
 const QString selectStyle = QString("background-color: #87CEFF;border: 1px solid #dcdfe6;border-radius: 10px; ");
-
+static const QString TIP[3] = { QString("到你了..."),QString("思考中..."),QString("未开始") };
 
 QT::QT(QWidget* parent)
     : QMainWindow(parent)
 {    
     //CAE5E8;
     QPalette palette(this->palette());
+    for (int i = 0; i < ROW_RANGE; i++)
+        for (int j = 0; j < COL_RANGE; j++)
+            label[i][j] = nullptr;
 
     palette.setColor(QPalette::Background, QColor(0xECECEC));
 
@@ -33,6 +36,7 @@ QT::QT(QWidget* parent)
     group_button.push_back(ui.pushButton_4);
     group_button.push_back(ui.pushButton_5);
     group_button.push_back(ui.pushButton_6);
+    group_button.push_back(ui.pushButton_7);
 
     QFile qss("QPushButton_Mode.qss");
     qss.open(QFile::ReadOnly);
@@ -53,7 +57,9 @@ QT::QT(QWidget* parent)
     ui.centralWidget->setMouseTracking(true);
 
     allowMouse = 0;
-
+    
+    ui.label_6->setText(TIP[2]);
+    
     recentPos.row = recentPos.col = -1;
 }
 
@@ -61,21 +67,18 @@ QT::QT(QWidget* parent)
 
 void QT::undo()
 {
-    if(!history.isEmpty()) {
+    int cnt = 2;
+    while (!history.isEmpty()) {
         auto point = history.top();
-        qDebug()<<"undo "<< point.row << ' ' << point.col << endl;
         history.pop();
         delete label[point.row][point.col];
-
-        mythread->terminate();
-        mythread->wait();
-        delete mythread;
-        mythread = new QThread;
-        ai.moveToThread(mythread);
-        mythread->start();
-        allowMouse = true;
-        qDebug() << "allow mouse" << endl;
+        label[point.row][point.col] = nullptr;
+        ai.unmakeMove(point.row, point.col, point.player);
+        cnt--;
+        if (cnt == 0)
+            break;
     }
+    recentPos.row = recentPos.col = -1;
 }
 
 void QT::replay()
@@ -84,20 +87,30 @@ void QT::replay()
     ui.pushButton->setChecked(false);
     ui.pushButton_2->setChecked(false);
     ui.pushButton_3->setChecked(false);
+    ui.pushButton_4->setEnabled(1);
 
     clearSelectStyle(group_button, depth);
 
     ui.pushButton_5->setVisible(true);
     ui.pushButton_6->setVisible(false);
+
+    ui.label_6->setText(TIP[2]);
     allowMouse = false;
     isbegin = false;
     firstPlay = -1;
     depth = -1;
     while (!history.empty()) {
-        auto point = history.top();
-        delete label[point.row][point.col];
         history.pop();
     }
+   
+    for(int i=0;i<ROW_RANGE;i++)
+        for (int j = 0; j < COL_RANGE; j++) {
+            if (label[i][j] != nullptr) {
+                delete label[i][j];
+                label[i][j] = nullptr;
+            }
+        }
+    recentPos.row = recentPos.col = -1;
     ai.clear();
 }
 
@@ -123,9 +136,10 @@ void QT::start()
         ui.pushButton_6->setVisible(1);
         if (firstPlay == COMPUTER) {
             ai.setChess(7, 7, COMPUTER);
-            history.push_back({ 7,7,COMPUTER });
+            history.push({ 7,7,COMPUTER });
             recentPos = { 7,7,COMPUTER };//记录
             drawChess(7, 7, COMPUTER);
+            ui.label_6->setText(TIP[HUMAN]);
         }
     }
 }
@@ -171,6 +185,7 @@ void QT::showSearchInfo(const SEARCH_INFO info)
     ui.label->setText(QString("思考时间:") + QString::number(info.time) + QString(" ms"));
     ui.label_2->setText(QString("搜索结点数:") + QString::number(info.cutNodes));
     ui.label_3->setText(QString("剪枝结点数:") + QString::number(info.validNodes));
+    ui.label_4->setText(QString("搜索深度:") + QString::number(depth));
 }
 
 void QT::mousePressEvent(QMouseEvent* event)
@@ -194,6 +209,7 @@ void QT::mousePressEvent(QMouseEvent* event)
         ai.setChess(chessY, chessX, HUMAN);
         history.push({ chessY,chessX,HUMAN });  //压入栈
         drawChess(chessY, chessX, HUMAN);
+        ui.label_6->setText(TIP[COMPUTER]);
         recentPos = { chessY,chessX,HUMAN };//记录位置
 
         if (ai.gameOver(HUMAN)&&isbegin) {
@@ -204,10 +220,12 @@ void QT::mousePressEvent(QMouseEvent* event)
                 QMessageBox::Ok);
             isbegin = 0;
             allowMouse = false;
+            ui.pushButton_4->setEnabled(0);
+            ui.label_6->setText(QString("你赢了..."));
             return;
         }
         else {
-            ui.pushButton_4->setEnabled(1);
+            ui.pushButton_4->setEnabled(false);
             emit beginSearch();
         }
     }
@@ -233,7 +251,8 @@ void QT::drawChess(int row, int col, int player)
             pix = QPixmap("black.png");
         else
             pix = QPixmap("white.png");
-        delete label[recentPos.row][recentPos.col];
+        if(label[recentPos.row][recentPos.col]!=nullptr)
+            delete label[recentPos.row][recentPos.col];
         label[recentPos.row][recentPos.col] = new QLabel(this);
         int pixelX = startX - gridW / 2 + recentPos.col * gridW;
         int pixelY = startY - gridH / 2 + recentPos.row * gridH;
@@ -262,6 +281,12 @@ void QT::connectButton()
         ai.setDepth(depth = 6);
         });
 
+    connect(ui.pushButton_7, &QPushButton::clicked, [=] {
+        clearSelectStyle(group_button, depth);
+        group_button[6]->setStyleSheet(selectStyle);
+        ai.setDepth(depth = 8);
+        });
+
     connect(ui.pushButton_4, SIGNAL(clicked()), this, SLOT(undo()));
 
     connect(ui.pushButton_5, SIGNAL(clicked()),this,SLOT(start()));
@@ -277,12 +302,14 @@ void QT::clearSelectStyle(QVector<QPushButton*>& group, int depth)
     for (int i = 0; i < 3; i++)
         if ((i + 1) * 2 == depth)
             group[i]->setStyleSheet(style);
+    if (depth == 8)
+        group[6]->setStyleSheet(style);
     qss.close();
     
 }
 
 void QT::paintComputer() {
-    ui.pushButton_4->setEnabled(0);
+    ui.pushButton_4->setEnabled(true);
     if (!receiveAns) {
         receiveAns = true;
         return;
@@ -294,6 +321,7 @@ void QT::paintComputer() {
     ai.setChess(chessY, chessX, COMPUTER);
     history.push({ chessY,chessX,COMPUTER});
     drawChess(chessY, chessX, COMPUTER);
+    ui.label_6->setText(TIP[HUMAN]);
     recentPos = { chessY,chessX,COMPUTER };
 
     if (isbegin) {
@@ -304,6 +332,8 @@ void QT::paintComputer() {
                 tr("你输了"),
                 QMessageBox::Ok,
                 QMessageBox::Ok);
+            ui.pushButton_4->setEnabled(0);
+            ui.label_6->setText(QString("你输了..."));
             return;
         }
         else

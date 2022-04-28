@@ -12,24 +12,21 @@ alpha 是当前MAX层的下限
 beta min 上一个MIN层的上限
 */
 
-int AI::MinMaxSearch(bool player,int depth, int alpha, int beta)
+long long AI::MinMaxSearch(bool player,int depth, long long alpha, long long beta)
 {
 	if (depth == 0 || gameOver(player) || gameOver(!player)) {
 		return evaluate(player);
 	}
-
 	/*   
 	  加入启发式搜索
 	  对当前的所有的空点进行打分，排序
 	  利用优先队列
 	*/
-
 	auto info = ZobristFind(this->ZobristCode);
 	if (info.depth >= depth) {
 		printf("通过Zobrist缓存 \n");
 		return info.val;
 	}
-
 
 	priority_queue<PointVal> q;
 	for (int i = 0; i < ROW_RANGE; i++) {
@@ -39,28 +36,31 @@ int AI::MinMaxSearch(bool player,int depth, int alpha, int beta)
 
 			char target_ch = (player == COMPUTER ? '1' : '0');
 			chessBoard[i][j] = target_ch;
-			int val = this->SingleScore(i, j, player)-this->SingleScore(i,j,!player);
+			long long val = this->SingleScore(i, j, player)-this->SingleScore(i,j,!player);
 			q.push({ i,j,val });		
 			chessBoard[i][j] = EMPTY;
 		}
 	}
-	int cnt = 5	;
+	int cnt = 0	;
 	while (!q.empty()) {
 		PointVal tmp = q.top();
 		q.pop();
-		cnt--;
-		if (SearchDepth == 6 && cnt < 0)
+		cnt++;
+		if ((SearchDepth == 6 && cnt >= 30) || (SearchDepth == 8 && cnt >= 15)) {
+			//while (!q.empty()) q.pop();
 			break;
+		}
 		makeMove(tmp.rowIndex, tmp.colIndex, player);
 		//Zobrist 计算
 		ZobristMove(player, tmp.rowIndex, tmp.colIndex);
 
-		int scoreList = -MinMaxSearch(!player, depth - 1, -beta, -alpha);
-
+		long long scoreList = -MinMaxSearch(!player, depth - 1, -beta, -alpha);
+		
 			//Zobrist 取消
 		ZobristMove(player, tmp.rowIndex, tmp.colIndex);
 
 		unmakeMove(tmp.rowIndex, tmp.colIndex, player);
+		
 
 		if (scoreList > alpha) {
 			alpha = scoreList;
@@ -77,7 +77,7 @@ int AI::MinMaxSearch(bool player,int depth, int alpha, int beta)
 	return alpha;
 }
 
-int AI::killSearch(bool player, int depth, int alpha, int beta)
+long long AI::killSearch(bool player, int depth, long long alpha, long long beta)
 {
 	if (gameOver(player) || gameOver(!player) || depth == 0)
 		return evaluate(player);
@@ -101,8 +101,8 @@ int AI::killSearch(bool player, int depth, int alpha, int beta)
 				continue;
 			}
 			
-			int val = this->SingleScore(i, j, player);
-			if(val>=1000)	//剪去一些低分
+			long long val = this->SingleScore(i, j, player);
+			if(val>= 1000000)	//剪去一些低分
 				q.push({ i,j,val });
 			chessBoard[i][j] = EMPTY;
 		}
@@ -113,7 +113,7 @@ int AI::killSearch(bool player, int depth, int alpha, int beta)
 		
 		makeMove(tmp.rowIndex, tmp.colIndex, player);
 
-		int scoreList = -killSearch(!player, depth - 1, -beta, -alpha);
+		long long scoreList = -killSearch(!player, depth - 1, -beta, -alpha);
 		
 		unmakeMove(tmp.rowIndex, tmp.colIndex, player);
 
@@ -172,60 +172,21 @@ bool AI::gameOver(bool player)
 			}
 	return false;
 }
-int AI::countVal(const vector<int>&res) {
-	int val=0;
+long long AI::countVal(const vector<int>&res) {
+	long long val=0;
 	for (int i = 0; i < chessStr.size(); i++)
-		val += res[i] * scoreList[i];
+		val += long long (res[i]) * scoreList[i];
 	return val;
 }
-int AI::evaluate(bool player)
+long long AI::evaluate(bool player)
 {
 #if SEARCH_WITH_AC
-	/*auto herizon = boardRecord.getRecord(RECORD_DIR::herizon);
-	auto vertical = boardRecord.getRecord(RECORD_DIR::vertical);
-	auto leftBt_rightTop = boardRecord.getRecord(RECORD_DIR::leftBt_rightTop);
-	auto leftTop_rightBt = boardRecord.getRecord(RECORD_DIR::leftTop_rightBt);
-
-	int selfScore = 0, enemyScore = 0;
-	for (auto item : herizon[player]) {
-		auto res = AC.search(item);
-		selfScore += countVal(res);
-	}
-	for (auto item : herizon[!player]) {
-		auto res = AC.search(item);
-		enemyScore += countVal(res);
-	}
-	for (auto item : vertical[player]) {
-		auto res = AC.search(item);
-		selfScore += countVal(res);
-	}
-	for (auto item : vertical[!player]) {
-		auto res = AC.search(item);
-		enemyScore += countVal(res);
-	}
-	for (auto item : leftBt_rightTop[player]) {
-		auto res = AC.search(item);
-		selfScore += countVal(res);
-	}
-	for (auto item : leftBt_rightTop[!player]) {
-		auto res = AC.search(item);
-		enemyScore += countVal(res);
-	}
-	for (auto item : leftTop_rightBt[player]) {
-		auto res = AC.search(item);
-		selfScore += countVal(res);
-	}
-	for (auto item : leftTop_rightBt[!player]) {
-		auto res = AC.search(item);
-		enemyScore += countVal(res);
-	}*/
 	return boardRecord.getScore(player);
 #endif
-
 #if !SEARCH_WITH_AC
 	char target_ch = player == COMPUTER ? '1' : '0';
 	char enemy_ch = player == COMPUTER ? '0' : '1';
-	int selfScore = 0, enemyScore = 0;
+	long long selfScore = 0, enemyScore = 0;
 	for (int i = 0; i < ROW_RANGE; i++) {
 		for (int j = 0; j < COL_RANGE; j++) {
 			if (chessBoard[i][j] == target_ch||hasNeighbor(i,j))
@@ -238,18 +199,18 @@ int AI::evaluate(bool player)
 #endif
 }
 
-int AI::SingleScore(int rowIndex, int colIndex, bool player)
+long long AI::SingleScore(int rowIndex, int colIndex, bool player)
 {
 	//4个方向，通过+-即可获得8个方向
 	const vector < Direction > direct = { {0,1},{1,0}, {1,1},{1,-1} };
 	vector <string>pointList(4);
-	int score=0;
+	long long score=0;
 	for (int i = 0; i < 4; i++)
 		pointList[i]=getPointLink(rowIndex, colIndex, player, direct[i]);
 	
 #if SINGLE_EVALUATE_USE_AC==0
 	for (int k = 0; k < 4; k++) {	
-		int dirScore = 0;
+		long long dirScore = 0;
 		for (int i = 0; i < chessStr.size(); i++) {
 			if (pointList[k].find(chessStr[i]) != pointList[k].npos)
 				dirScore += scoreList[i];
@@ -277,7 +238,9 @@ void AI::clear()
 	for (int i = 0; i < ROW_RANGE; i++)
 		for (int j = 0; j < COL_RANGE; j++)
 			chessBoard[i][j] = EMPTY;
+	boardRecord.clear();
 	SearchDepth = 2;
+	nextPos.col = nextPos.col = -1;
 }
 
 void AI::makeMove(int row, int col, int player)
@@ -337,31 +300,31 @@ AI::AI(int depth)
 	cutNodes = 0;
 	validNodes = 0;
 
-	chessStr.push_back("11111");	scoreList.push_back(1000000);//连五
+	chessStr.push_back("11111");	scoreList.push_back(1000000000);//连五
 	
-	chessStr.push_back("X1111X");	scoreList.push_back(10000);//活四
+	chessStr.push_back("X1111X");	scoreList.push_back(100000000);//活四
 	
 
-	chessStr.push_back("X1111");	scoreList.push_back(1000);//眠四
-	chessStr.push_back("1X111");	scoreList.push_back(1000);
-	chessStr.push_back("11X11");	scoreList.push_back(1000);
-	chessStr.push_back("111X1");	scoreList.push_back(1000);
-	chessStr.push_back("1111X");	scoreList.push_back(1000);
+	chessStr.push_back("X1111");	scoreList.push_back(1000000);//眠四
+	chessStr.push_back("1X111");	scoreList.push_back(1000000);
+	chessStr.push_back("11X11");	scoreList.push_back(1000000);
+	chessStr.push_back("111X1");	scoreList.push_back(1000000);
+	chessStr.push_back("1111X");	scoreList.push_back(1000000);
 
-	chessStr.push_back("X111X");	scoreList.push_back(1000);//活三
-	chessStr.push_back("X1X11X");	scoreList.push_back(300);
-	chessStr.push_back("X11X1X");	scoreList.push_back(300);
+	chessStr.push_back("X111X");	scoreList.push_back(1000000);//活三
+	chessStr.push_back("X1X11X");	scoreList.push_back(30000);
+	chessStr.push_back("X11X1X");	scoreList.push_back(30000);
 
-	chessStr.push_back("111XX");	scoreList.push_back(100);//眠三
-	chessStr.push_back("XX111");	scoreList.push_back(100);
+	chessStr.push_back("111XX");	scoreList.push_back(10000);//眠三
+	chessStr.push_back("XX111");	scoreList.push_back(10000);
 
-	chessStr.push_back("XX11XX");	scoreList.push_back(100);//活二
-	chessStr.push_back("X1X1X");	scoreList.push_back(100);
+	chessStr.push_back("XX11XX");	scoreList.push_back(10000);//活二
+	chessStr.push_back("X1X1X");	scoreList.push_back(10000);
 
-	chessStr.push_back("11XXX");	scoreList.push_back(10);//眠二
-	chessStr.push_back("XXX11");	scoreList.push_back(10);
+	chessStr.push_back("11XXX");	scoreList.push_back(100);//眠二
+	chessStr.push_back("XXX11");	scoreList.push_back(100);
 
-	chessStr.push_back("XX1XX");	scoreList.push_back(10);//活一
+	chessStr.push_back("XX1XX");	scoreList.push_back(1);//活一
 	
 	boardRecord.init(scoreList);
 
@@ -378,8 +341,10 @@ void AI::search()
 	clock_t start, end;
 	start = clock();
 	cout << "search start" << endl;
-	int val=MinMaxSearch(COMPUTER, SearchDepth, -0x3fffffff,0x3fffffff);
-	cout << "search end" << endl<<"val= "<<val<<endl;
+	long long val=MinMaxSearch(COMPUTER, SearchDepth, - long long (0x7fffffff)*(long long)(10),long long (0x7fffffff)*long long(10));
+	
+	//long long val=MinMaxSearch(COMPUTER, SearchDepth,-0x7fffffff ,0x7fffffff);
+	cout << "search end" << endl<<"val= "<<val<<endl; 
 	cout << boardRecord.getRecord(RECORD_DIR::leftBt_rightTop)[COMPUTER][15] << endl;
 	end = clock();
 	SEARCH_INFO res{ this->nextPos.row,this->nextPos.col,end - start,cutNodes,validNodes };

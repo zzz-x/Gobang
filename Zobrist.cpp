@@ -36,7 +36,7 @@ bool AI::checkChess(int row, int col, int player)
 	
 }
 
-void AI::ZobristCache(int depth,int score)
+void AI::ZobristCache(int depth, long long score)
 {
 	if (ZobristMap.find(this->ZobristCode) != ZobristMap.end())
 		ZobristMap.insert(pair<long long,ZobristInfo>( this->ZobristCode,{ depth,score }));

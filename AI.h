@@ -30,23 +30,23 @@ protected:
 
 	map<long long,ZobristInfo>ZobristMap;
 	vector<string>chessStr;
-	vector<int> scoreList;
+	vector<long long> scoreList;
 
 	int cutNodes;
 	int validNodes;
 
 	//Zobrist²¿·Ö
 	void ZobristMove(bool player, int rowIndex, int colIndex);
-	void ZobristCache(int depth, int score);
+	void ZobristCache(int depth, long long score);
 	const ZobristInfo ZobristFind(long long code);
-	int MinMaxSearch(bool player, int depth, int alpha, int beta);
-	int killSearch(bool player, int depth, int alpha, int beta);
+	long long MinMaxSearch(bool player, int depth, long long alpha, long long beta);
+	long long killSearch(bool player, int depth, long long alpha, long long beta);
 	bool isKillChess(bool player, int rowIndex, int colIndex);
-	int evaluate(bool isAI);
-	int SingleScore(int rowIndex, int colIndex, bool player);
+	long long evaluate(bool isAI);
+	long long SingleScore(int rowIndex, int colIndex, bool player);
 	bool hasNeighbor(int rowIndex, int colIndex);
 	string getPointLink(int rowIndex, int colIndex, bool player, const Direction& direct);
-	int countVal(const vector<int>&res);
+	long long countVal(const vector<int>&res);
 
 public:
 	AI(int depth = 2);
